@@ -184,9 +184,9 @@ DURATION_MINUTES = cfg["DUR"]
 
 st.title(cfg.get("title", "🧪 Quiz"))
 
-st.markdown("**Entrez votre e-mail** pour commencer. Une seule tentative est autorisée **par questionnaire**.")
+st.markdown("**Entrez votre e-mail** pour commencer. Une seule tentative est autorisée **par questionnaire**. Vous disposez de 5 min à compter du clic sur démarrer pour finir le questionnaire")
 user_input = st.text_input("E-mail", placeholder="prenom.nom@entreprise.com")
-start = st.button("Démarrer / Reprendre")
+start = st.button("Démarrer")
 
 if start:
     if not user_input.strip():
@@ -207,6 +207,50 @@ if start:
 
 if "user" not in st.session_state:
     st.stop()
+
+# --- Anti-copie et anti-impression global ---
+st.markdown("""
+<style>
+/* Empêche la sélection partout sauf dans les champs de saisie */
+html, body, [data-testid="stAppViewContainer"] .block-container *:not(input):not(textarea):not([contenteditable="true"]) {
+  -webkit-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Empêche le drag (copie par glisser) */
+[data-testid="stAppViewContainer"] .block-container * {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+}
+
+/* Autorise la sélection uniquement dans les champs utiles */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* --- Blocage de l'impression --- */
+@media print {
+  /* Cache tout le contenu Streamlit */
+  body * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  /* Optionnel : message à la place */
+  body::before {
+    content: "⚠️ Impression désactivée pour ce quiz.";
+    display: block;
+    text-align: center;
+    margin-top: 50vh;
+    font-size: 24px;
+    color: red;
+    visibility: visible !important;
+  }
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 user = st.session_state["user"]
 
@@ -232,8 +276,6 @@ if status == "finished":
     st.error("Vous avez déjà terminé ce test pour ce questionnaire. Une seule tentative autorisée.")
     st.stop()
 
-# Consigne (pas de décompte visible)
-st.info(f"⏱️ Vous disposez de **{DURATION_MINUTES} minutes** à partir du clic sur **Démarrer / Reprendre** pour compléter et soumettre ce questionnaire.")
 
 # Sécurité : si temps écoulé → on bloque
 must_end_raw = rec.get("must_end_at", "")
@@ -244,6 +286,74 @@ except Exception:
 if datetime.now(TIMEZONE) > must_end:
     st.error("⏰ Temps écoulé. Votre tentative est expirée.")
     st.stop()
+
+
+import streamlit.components.v1 as components
+
+# --- Compte à rebours / Sablier visuel ---
+# Calcule le temps restant côté serveur (source de vérité)
+now_utc = datetime.now(TIMEZONE)
+remaining_ms = int(max(0, (must_end - now_utc).total_seconds()) * 1000)
+total_ms = int(DURATION_MINUTES * 60 * 1000)
+
+# Couleur du quiz courant (déjà dans cfg)
+bar_color = cfg.get("color", "#2563eb")
+
+components.html(f"""
+<div style="margin: 8px 0 18px 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;">
+  <div id="timer" style="font-size:28px; text-align:center; margin-bottom:8px;">
+    ⏳ Calcul du temps…
+  </div>
+
+  <!-- Barre de progression façon “sablier” qui se vide -->
+  <div style="height:14px; background:#eee; border-radius:8px; overflow:hidden;">
+    <div id="bar" style="height:100%; width:100%; background:{bar_color}; transition: width 1s linear;"></div>
+  </div>
+
+  <div style="text-align:center; opacity:.75; font-size:12px; margin-top:6px;">
+    Le sablier se vide au fil du temps restant.
+  </div>
+</div>
+
+<script>
+  const total = {total_ms};
+  let remaining = {remaining_ms};
+
+  const timerEl = document.getElementById('timer');
+  const barEl = document.getElementById('bar');
+
+  function fmt(ms) {{
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }}
+
+  function hourglassEmoji(ms) {{
+    // Alterne ⏳ / ⌛ pour donner l'effet “sablier”
+    return Math.floor(ms / 1000) % 2 === 0 ? '⏳' : '⌛';
+  }}
+
+  function tick() {{
+    const pct = Math.max(0, Math.min(100, (remaining / total) * 100));
+    barEl.style.width = pct + '%';
+    timerEl.textContent = hourglassEmoji(remaining) + ' Temps restant : ' + fmt(remaining);
+
+    remaining -= 1000;
+    if (remaining < 0) {{
+      clearInterval(iv);
+      barEl.style.width = '0%';
+      timerEl.textContent = '⌛ Temps écoulé';
+      // Optionnel : on désactive les inputs s'ils sont visibles côté client
+      const btns = [...document.querySelectorAll('button')];
+      btns.forEach(b => b.disabled = true);
+    }}
+  }}
+
+  tick();
+  const iv = setInterval(tick, 1000);
+</script>
+""", height=130)
 
 # Charger & figer les questions
 frozen_key = f"quiz_frozen::{quiz_name}::{user}"
