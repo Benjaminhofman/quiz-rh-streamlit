@@ -144,7 +144,7 @@ def update_result(ws_results, row_idx: int, score_text: str, details_obj: dict):
 # PAGE D’ACCUEIL (logo + 2 boutons)
 # =========================
 def landing():
-    st.markdown("<h1 style='text-align:center;'>Bienvenue sur le Quiz RH</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>Bienvenue sur le Quiz technique </h1>", unsafe_allow_html=True)
 
     # Logo centré
     logo_path = None
