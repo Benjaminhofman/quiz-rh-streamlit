@@ -437,6 +437,7 @@ if submitted:
             "ok": is_ok
         })
 
+
     try:
         update_result(ws_r, row_idx, f"{score}/{total_points}", {"items": details})
     except Exception as e:
@@ -445,6 +446,12 @@ if submitted:
         st.stop()
 
     st.success(f"🎉 Soumis ! Score : **{score}/{total_points}**")
+
+    # 👉 Ajout du message demandé
+    st.success("merci, votre test a bien été pris en compte")
+
     st.markdown("Merci. Votre tentative est maintenant **clôturée**.")
     st.stop()
+
+
 
