@@ -18,7 +18,7 @@ QUIZZES = {
         "Q": "Questions",
         "R": "Resultats",
         "DUR": 4,   # minutes
-        "title": "🧪 Quiz RH - Assistant",
+        "title": "🧪 Quiz - Assistant",
         "cta": "🎯 Quiz Assistant",
         "color": "#2563eb",
     },
