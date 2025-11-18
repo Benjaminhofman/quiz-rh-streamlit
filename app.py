@@ -17,7 +17,7 @@ QUIZZES = {
     "Assistant": {
         "Q": "Questions",
         "R": "Resultats",
-        "DUR": 4,   # minutes
+        "DUR": 5,   # minutes
         "title": "🧪 Quiz - Assistant",
         "cta": "🎯 Quiz Assistant",
         "color": "#2563eb",
@@ -25,7 +25,7 @@ QUIZZES = {
     "Collaborateurs": {
         "Q": "Questions_Collab",
         "R": "Resultats_Collab",
-        "DUR": 4,   # minutes
+        "DUR": 5,   # minutes
         "title": "🧪 Quiz - Collaborateurs d'expertise comptable",
         "cta": "📘 Quiz Collaborateurs",
         "color": "#059669",
@@ -184,7 +184,7 @@ DURATION_MINUTES = cfg["DUR"]
 
 st.title(cfg.get("title", "🧪 Quiz"))
 
-st.markdown("**Entrez votre e-mail** pour commencer. Une seule tentative est autorisée **par questionnaire**. Vous disposez de 4 min à compter du clic sur démarrer pour finir le questionnaire")
+st.markdown("**Entrez votre e-mail** pour commencer. Une seule tentative est autorisée **par questionnaire**. Vous disposez de 5 min à compter du clic sur démarrer pour finir le questionnaire")
 user_input = st.text_input("E-mail", placeholder="prenom.nom@entreprise.com")
 start = st.button("Démarrer")
 
