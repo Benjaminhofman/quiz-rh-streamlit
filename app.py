@@ -134,6 +134,7 @@ def start_or_resume_attempt(ws_results, user: str, duration_minutes: int):
     }
     return new_idx, new_rec, "created"
 
+
 def update_result(ws_results, row_idx: int, score_text: str, details_obj: dict):
     now = datetime.now(TIMEZONE).isoformat()
     ws_results.update_cell(row_idx, 4, now)                 # finished_at
@@ -276,7 +277,6 @@ if status == "finished":
     st.error("Vous avez déjà terminé ce test pour ce questionnaire. Une seule tentative autorisée.")
     st.stop()
 
-
 # Sécurité : si temps écoulé → on bloque
 must_end_raw = rec.get("must_end_at", "")
 try:
@@ -286,7 +286,6 @@ except Exception:
 if datetime.now(TIMEZONE) > must_end:
     st.error("⏰ Temps écoulé. Votre tentative est expirée.")
     st.stop()
-
 
 import streamlit.components.v1 as components
 
@@ -419,6 +418,9 @@ if submitted:
     def norm(s: str) -> str:
         return (s or "").strip().casefold()
 
+    # =========================
+    # Calcul du score + détails
+    # =========================
     total_points, score = 0, 0
     details = []
     for q in questions:
@@ -437,21 +439,36 @@ if submitted:
             "ok": is_ok
         })
 
+    # =========================
+    # 👉 IDENTIFICATION DES ERREURS
+    # =========================
+    erreurs = []
+    for d in details:
+        if not d["ok"]:
+            err = (
+                f"{d['id']} : "
+                f"Votre réponse → {', '.join(d['user_answer']) or 'Aucune'} "
+                f"≠ "
+                f"Bonne réponse → {', '.join(d['correct'])}"
+            )
+            erreurs.append(err)
 
+    # =========================
+    # Écriture dans Google Sheets : score + détails + erreurs
+    # =========================
     try:
+        # Colonne 7 : erreurs
+        ws_r.update_cell(row_idx, 7, " | ".join(erreurs))
+
+        # Enregistrement standard
         update_result(ws_r, row_idx, f"{score}/{total_points}", {"items": details})
+
     except Exception as e:
         st.error("Erreur lors de l'enregistrement du résultat.")
         st.exception(e)
         st.stop()
 
     st.success(f"🎉 Soumis ! Score : **{score}/{total_points}**")
-
-    # 👉 Ajout du message demandé
     st.success("merci, votre test a bien été pris en compte")
-
     st.markdown("Merci. Votre tentative est maintenant **clôturée**.")
     st.stop()
-
-
-
